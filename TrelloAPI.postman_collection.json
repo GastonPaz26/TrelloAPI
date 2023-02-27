@@ -45,11 +45,28 @@
 							"let newName = pm.environment.get(\"NewBoard\");\r",
 							"let requestBody  = pm.response.json();\r",
 							"let actualName = requestBody.name;\r",
-							"console.log(actualName)\r",
+							"let idBoard = requestBody.id\r",
+							"let attributeList = pm.environment.get(\"idBoard\");\r",
+							"\r",
+							"\r",
+							"\r",
+							"function pushAttribute(attribute) {\r",
+							"  attributeList.push(attribute);\r",
+							"  console.log(attributeList)\r",
+							"  if (attributeList.length > 5) {\r",
+							"    attributeList.shift();\r",
+							"  }\r",
+							"pm.environment.set(\"idBoard\", attributeList)\r",
+							"}\r",
+							"\r",
+							"pushAttribute(idBoard)\r",
+							"\r",
 							"\r",
 							"pm.test(\"El nombre del tablero es \" + newName, function () {\r",
 							"    pm.expect(actualName).to.include(newName);\r",
-							"});"
+							"});\r",
+							"\r",
+							"pm.environment.set(\"actualBoard\", idBoard)"
 						],
 						"type": "text/javascript"
 					}
@@ -95,7 +112,210 @@
 			"response": []
 		},
 		{
-			"name": "Get Boards",
+			"name": "Get  a Board",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let response = pm.response.json();\r",
+							"console.log(response);\r",
+							"let toDo = response[0].id;\r",
+							"console.log(toDo);\r",
+							"let inProgress = response[1].id\r",
+							"let done  = response[2].id\r",
+							"\r",
+							"pm.collectionVariables.set(\"toDo\", toDo);\r",
+							"pm.collectionVariables.set(\"inProgress\", inProgress);\r",
+							"pm.collectionVariables.set(\"done\", done);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.trello.com/1/boards/{{actualBoard}}/lists/?key={{key}}&token={{token}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"trello",
+						"com"
+					],
+					"path": [
+						"1",
+						"boards",
+						"{{actualBoard}}",
+						"lists",
+						""
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{key}}"
+						},
+						{
+							"key": "token",
+							"value": "{{token}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create a card",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let toDo = pm.collectionVariables.get(\"toDo\")\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let response = pm.response.json();\r",
+							"let idCardAction = response.id;\r",
+							"pm.collectionVariables.set(\"idCardAction\",idCardAction)\r",
+							"\r",
+							"\r",
+							"let descriptionCard = pm.environment.get(\"descriptionCard\")\r",
+							"console.log(descriptionCard)\r",
+							"\r",
+							"pm.test(\"Description card is correct\", function () {\r",
+							"    pm.expect(response.desc).to.eql(descriptionCard);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"New Card\",\r\n    \"desc\": \"{{descriptionCard}}\",\r\n    \"idList\": \"{{toDo}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.trello.com/1/cards?key={{key}}&token={{token}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"trello",
+						"com"
+					],
+					"path": [
+						"1",
+						"cards"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{key}}"
+						},
+						{
+							"key": "token",
+							"value": "{{token}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Cards",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let idCardAction = pm.collectionVariables.get(\"idCardAction\");\r",
+							"let firstUpdate = pm.collectionVariables.get(\"firstUpdate\")\r",
+							"\r",
+							"\r",
+							"\r",
+							"\r",
+							"if(firstUpdate === true) {\r",
+							"    let idlist = pm.collectionVariables.get(\"inProgress\");\r",
+							"    pm.collectionVariables.set(\"idlist\", idlist);\r",
+							"    pm.collectionVariables.set(\"firstUpdate\", false);\r",
+							"    \r",
+							"}else{\r",
+							"    let idlist = pm.collectionVariables.get(\"done\");\r",
+							"      pm.collectionVariables.set(\"idlist\", idlist)\r",
+							"    pm.collectionVariables.set(\"firstUpdate\", true);\r",
+							"}\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"idList\": \"{{idlist}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.trello.com/1/cards/{{idCardAction}}?key={{key}}&token={{token}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"trello",
+						"com"
+					],
+					"path": [
+						"1",
+						"cards",
+						"{{idCardAction}}"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{key}}"
+						},
+						{
+							"key": "token",
+							"value": "{{token}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Board",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
@@ -130,18 +350,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": ""
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create a new list",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"url": {
-					"raw": "https://api.trello.com/1/boards/63d5cb44ba9b4ec32292c0f2/lists?key={{key}}&token={{token}}",
+					"raw": "https://api.trello.com/1/boards/{{actualBoard}}?key={{key}}&token={{token}}",
 					"protocol": "https",
 					"host": [
 						"api",
@@ -151,54 +360,9 @@
 					"path": [
 						"1",
 						"boards",
-						"63d5cb44ba9b4ec32292c0f2",
-						"lists"
+						"{{actualBoard}}"
 					],
 					"query": [
-						{
-							"key": "key",
-							"value": "{{key}}"
-						},
-						{
-							"key": "token",
-							"value": "{{token}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create a card",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"name\": \"New Card\",\r\n    \"desc\": \"Description -  Description - Description - Description - Description - Description - \",\r\n    \"idList\": \"63d5cc2ab75e510e4595dab6\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "https://api.trello.com/1/cards?idList=63d5cc2ab75e510e4595dab6&key={{key}}&token={{token}}",
-					"protocol": "https",
-					"host": [
-						"api",
-						"trello",
-						"com"
-					],
-					"path": [
-						"1",
-						"cards"
-					],
-					"query": [
-						{
-							"key": "idList",
-							"value": "63d5cc2ab75e510e4595dab6"
-						},
 						{
 							"key": "key",
 							"value": "{{key}}"
@@ -230,19 +394,17 @@
 					{
 						"key": "key",
 						"value": "{{key}}",
-						"type": "text",
-						"disabled": true
+						"type": "text"
 					},
 					{
 						"key": "token",
 						"value": "{{token}}",
-						"type": "text",
-						"disabled": true
+						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"name\": \"Change Name\"\r\n}",
+					"raw": "{\r\n    \"name\": \"New Name\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -250,7 +412,7 @@
 					}
 				},
 				"url": {
-					"raw": "https://api.trello.com/1/boards/63d5cb44ba9b4ec32292c0f2/?key={{key}}&token={{token}}",
+					"raw": "https://api.trello.com/1/boards/{{actualBoard}}/?key={{key}}&token={{token}}",
 					"protocol": "https",
 					"host": [
 						"api",
@@ -260,7 +422,7 @@
 					"path": [
 						"1",
 						"boards",
-						"63d5cb44ba9b4ec32292c0f2",
+						"{{actualBoard}}",
 						""
 					],
 					"query": [
@@ -278,10 +440,47 @@
 			"response": []
 		},
 		{
-			"name": "New Request",
+			"name": "Delete Board",
 			"request": {
-				"method": "GET",
-				"header": []
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.trello.com/1/boards/{{actualBoard}}?key={{key}}&token={{token}}&id",
+					"protocol": "https",
+					"host": [
+						"api",
+						"trello",
+						"com"
+					],
+					"path": [
+						"1",
+						"boards",
+						"{{actualBoard}}"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{key}}"
+						},
+						{
+							"key": "token",
+							"value": "{{token}}"
+						},
+						{
+							"key": "id",
+							"value": null
+						}
+					]
+				}
 			},
 			"response": []
 		}
@@ -304,6 +503,33 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "toDo",
+			"value": ""
+		},
+		{
+			"key": "inProgress",
+			"value": ""
+		},
+		{
+			"key": "done",
+			"value": ""
+		},
+		{
+			"key": "idCardAction",
+			"value": ""
+		},
+		{
+			"key": "firstUpdate",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "idlist",
+			"value": ""
 		}
 	]
 }
